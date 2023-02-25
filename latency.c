@@ -51,7 +51,8 @@ int block = 0;          /* block mode */
 int use_poll = 0;
 int resample = 1;
 unsigned long loop_limit;
- 
+int length[512];
+
 snd_output_t *output = NULL;
  
 int setparams_stream(snd_pcm_t *handle,
@@ -503,6 +504,11 @@ int main(int argc, char *argv[])
     size_t frames_in, frames_out, in_max;
     int effect = 0;
     morehelp = 0;
+  
+    for(int i=0; i<512; i++){
+	    length[i] = 0;
+    }
+
     while (1) {
         int c;
         if ((c = getopt_long(argc, argv, "hP:C:m:M:F:f:c:r:B:E:s:bpen", long_option, NULL)) < 0)
@@ -653,6 +659,8 @@ int main(int argc, char *argv[])
  
         ok = 1;
         in_max = 0;
+	int i=0;
+	int mask = 0x000001FF; 
         while (ok && frames_in < loop_limit) {
             if (use_poll) {
                 /* use poll to wait for next event */
@@ -665,8 +673,12 @@ int main(int argc, char *argv[])
                     applyeffect(buffer,r);
                 if (writebuf(phandle, buffer, r, &frames_out) < 0)
                     ok = 0;
+		*(length+i) = r;
+		i++;
+		i=i&mask; 
             }
         }
+
         if (ok)
             printf("Success\n");
         else
